@@ -406,3 +406,51 @@ export fn time_date_time_days_this_month(self: *const time_date_time_t) u16 {
     };
     return date_time.daysThisMonth();
 }
+
+export fn time_date_time_day_of_this_year(self: *const time_date_time_t) u16 {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    return date_time.dayOfThisYear();
+}
+
+export fn time_date_time_to_unix_milli(self: *const time_date_time_t) u64 {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    return date_time.toUnixMilli();
+}
+
+// TODO: fn format(self: Self, comptime fmt: string, options: std.fmt.FormatOptions, writer: anytype) !void
+
+// TODO: fn formatAlloc(self: Self, alloc: std.mem.Allocator, comptime fmt: string) !string
+
+export fn time_is_leap_year(year: u16) c_int {
+    var ret: c_int = 0;
+    if (year % 4 == 0) ret = 1;
+    if (year % 100 == 0) ret = 0;
+    if (year % 400 == 0) ret = 1;
+    return ret;
+}
+
+export fn time_days_in_year(year: u16) u16 {
+    return if (time_is_leap_year(year) == 1) 366 else 365;
+}
