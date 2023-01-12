@@ -51,6 +51,12 @@ fn TimeZoneTo_time_zone_t(timezone: time.TimeZone) time_zone_t {
     }
 }
 
+fn time_zone_t_toTimeZone(timezone: time_zone_t) time.TimeZone {
+    switch (timezone) {
+        .TIME_ZONE_UTC => return time.TimeZone.UTC
+    }
+}
+
 fn WeekDayTo_time_zone_t(weekday: time.WeekDay) time_week_day_t {
     switch (weekday) {
         .Sun => return time_week_day_t.TIME_WEEK_DAY_SUN,
@@ -63,9 +69,27 @@ fn WeekDayTo_time_zone_t(weekday: time.WeekDay) time_week_day_t {
     }
 }
 
-fn EraTo_time_era(era: time.Era) time_era_t {
+fn time_zone_t_toWeekDay(weekday: time_week_day_t) time.WeekDay {
+    switch (weekday) {
+        .TIME_WEEK_DAY_SUN => return time.WeekDay.Sun,
+        .TIME_WEEK_DAY_MON => return time.WeekDay.Mon,
+        .TIME_WEEK_DAY_TUE => return time.WeekDay.Tue,
+        .TIME_WEEK_DAY_WED => return time.WeekDay.Wed,
+        .TIME_WEEK_DAY_THU => return time.WeekDay.Thu,
+        .TIME_WEEK_DAY_FRI => return time.WeekDay.Fri,
+        .TIME_WEEK_DAY_SAT => return time.WeekDay.Sat,
+    }
+}
+
+fn EraTo_time_era_t(era: time.Era) time_era_t {
     switch (era) {
         .AD => return time_era_t.TIME_ERA_AD
+    }
+}
+
+fn time_era_t_toEra(era: time_era_t) time.Era {
+    switch (era) {
+        .TIME_ERA_AD => return time.Era.AD
     }
 }
 
@@ -81,7 +105,7 @@ export fn time_date_time_init_unix_ms(unix: u64) time_date_time_t {
         .years = date_time.years,
         .timezone = TimeZoneTo_time_zone_t(date_time.timezone),
         .weekday = WeekDayTo_time_zone_t(date_time.weekday),
-        .era = EraTo_time_era(date_time.era)
+        .era = EraTo_time_era_t(date_time.era)
     };
 }
 
@@ -97,7 +121,7 @@ export fn time_date_time_init_unix(unix: u64) time_date_time_t {
         .years = date_time.years,
         .timezone = TimeZoneTo_time_zone_t(date_time.timezone),
         .weekday = WeekDayTo_time_zone_t(date_time.weekday),
-        .era = EraTo_time_era(date_time.era)
+        .era = EraTo_time_era_t(date_time.era)
     };
 }
 
@@ -113,7 +137,7 @@ export fn time_date_time_init(year: u16, month: u16, day: u16, hr: u16, min: u16
         .years = date_time.years,
         .timezone = TimeZoneTo_time_zone_t(date_time.timezone),
         .weekday = WeekDayTo_time_zone_t(date_time.weekday),
-        .era = EraTo_time_era(date_time.era)
+        .era = EraTo_time_era_t(date_time.era)
     };
 }
 
@@ -129,6 +153,256 @@ export fn time_date_time_now() time_date_time_t {
         .years = date_time.years,
         .timezone = TimeZoneTo_time_zone_t(date_time.timezone),
         .weekday = WeekDayTo_time_zone_t(date_time.weekday),
-        .era = EraTo_time_era(date_time.era)
+        .era = EraTo_time_era_t(date_time.era)
     };
+}
+
+export fn time_date_time_eql(self: *const time_date_time_t, other: *const time_date_time_t) c_int {
+        if ( self.*.ms == other.*.ms and
+            self.*.seconds == other.*.seconds and
+            self.*.minutes == other.*.minutes and
+            self.*.hours == other.*.hours and
+            self.*.days == other.*.days and
+            self.*.months == other.*.months and
+            self.*.years == other.*.years and
+            self.*.timezone == other.*.timezone and
+                self.*.weekday == other.*.weekday) {
+            return 1;
+    } else {
+            return 0;
+    }
+}
+
+export fn time_date_time_add_ms(self: *time_date_time_t, count: u64) void {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    const result = date_time.addMs(count);
+    self.*.ms = result.ms;
+    self.*.seconds = result.seconds;
+    self.*.minutes = result.minutes;
+    self.*.hours = result.hours;
+    self.*.days = result.days;
+    self.*.months = result.months;
+    self.*.years = result.years;
+    self.*.timezone = TimeZoneTo_time_zone_t(result.timezone);
+    self.*.weekday = WeekDayTo_time_zone_t(result.weekday);
+    self.*.era = EraTo_time_era_t(result.era);
+}
+
+export fn time_date_time_add_secs(self: *time_date_time_t, count: u64) void {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    const result = date_time.addSecs(count);
+    self.*.ms = result.ms;
+    self.*.seconds = result.seconds;
+    self.*.minutes = result.minutes;
+    self.*.hours = result.hours;
+    self.*.days = result.days;
+    self.*.months = result.months;
+    self.*.years = result.years;
+    self.*.timezone = TimeZoneTo_time_zone_t(result.timezone);
+    self.*.weekday = WeekDayTo_time_zone_t(result.weekday);
+    self.*.era = EraTo_time_era_t(result.era);
+}
+
+export fn time_date_time_add_mins(self: *time_date_time_t, count: u64) void {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    const result = date_time.addMins(count);
+    self.*.ms = result.ms;
+    self.*.seconds = result.seconds;
+    self.*.minutes = result.minutes;
+    self.*.hours = result.hours;
+    self.*.days = result.days;
+    self.*.months = result.months;
+    self.*.years = result.years;
+    self.*.timezone = TimeZoneTo_time_zone_t(result.timezone);
+    self.*.weekday = WeekDayTo_time_zone_t(result.weekday);
+    self.*.era = EraTo_time_era_t(result.era);
+}
+
+export fn time_date_time_add_hours(self: *time_date_time_t, count: u64) void {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    const result = date_time.addHours(count);
+    self.*.ms = result.ms;
+    self.*.seconds = result.seconds;
+    self.*.minutes = result.minutes;
+    self.*.hours = result.hours;
+    self.*.days = result.days;
+    self.*.months = result.months;
+    self.*.years = result.years;
+    self.*.timezone = TimeZoneTo_time_zone_t(result.timezone);
+    self.*.weekday = WeekDayTo_time_zone_t(result.weekday);
+    self.*.era = EraTo_time_era_t(result.era);
+}
+
+export fn time_date_time_add_days(self: *time_date_time_t, count: u64) void {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    const result = date_time.addDays(count);
+    self.*.ms = result.ms;
+    self.*.seconds = result.seconds;
+    self.*.minutes = result.minutes;
+    self.*.hours = result.hours;
+    self.*.days = result.days;
+    self.*.months = result.months;
+    self.*.years = result.years;
+    self.*.timezone = TimeZoneTo_time_zone_t(result.timezone);
+    self.*.weekday = WeekDayTo_time_zone_t(result.weekday);
+    self.*.era = EraTo_time_era_t(result.era);
+}
+
+export fn time_date_time_add_months(self: *time_date_time_t, count: u64) void {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    const result = date_time.addMonths(count);
+    self.*.ms = result.ms;
+    self.*.seconds = result.seconds;
+    self.*.minutes = result.minutes;
+    self.*.hours = result.hours;
+    self.*.days = result.days;
+    self.*.months = result.months;
+    self.*.years = result.years;
+    self.*.timezone = TimeZoneTo_time_zone_t(result.timezone);
+    self.*.weekday = WeekDayTo_time_zone_t(result.weekday);
+    self.*.era = EraTo_time_era_t(result.era);
+}
+
+export fn time_date_time_add_years(self: *time_date_time_t, count: u64) void {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    const result = date_time.addYears(count);
+    self.*.ms = result.ms;
+    self.*.seconds = result.seconds;
+    self.*.minutes = result.minutes;
+    self.*.hours = result.hours;
+    self.*.days = result.days;
+    self.*.months = result.months;
+    self.*.years = result.years;
+    self.*.timezone = TimeZoneTo_time_zone_t(result.timezone);
+    self.*.weekday = WeekDayTo_time_zone_t(result.weekday);
+    self.*.era = EraTo_time_era_t(result.era);
+}
+
+export fn time_date_time_is_leap_year(self: *const time_date_time_t) c_int {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    if (date_time.isLeapYear()) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+export fn time_date_time_days_this_year(self: *const time_date_time_t) u16 {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    return date_time.daysThisYear();
+}
+
+export fn time_date_time_days_this_month(self: *const time_date_time_t) u16 {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    return date_time.daysThisMonth();
 }
