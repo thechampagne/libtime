@@ -32,6 +32,19 @@ const time_date_time_t = extern struct {
     era: time_era_t,
 };
 
+const time_format_options_alignment_t = enum(c_int) {
+    TIME_FORMAT_OPTIONS_ALIGNMENT_LEFT,
+    TIME_FORMAT_OPTIONS_ALIGNMENT_CENTER,
+    TIME_FORMAT_OPTIONS_ALIGNMENT_RIGHT
+};
+
+const time_format_options_t = extern struct {
+    precision: usize,
+    width: usize,
+    alignment: time_format_options_alignment_t,
+    fill: u8,
+};
+
 export const time_epoch_unix = time_date_time_t {
     .ms = 0,
     .seconds = 0,
@@ -44,6 +57,14 @@ export const time_epoch_unix = time_date_time_t {
     .weekday = .TIME_WEEK_DAY_THU,
     .era = .TIME_ERA_AD,
 };
+
+fn time_format_options_alignment_t_toAlignment(alignment: time_format_options_alignment_t) std.fmt.Alignment {
+    switch (alignment) {
+        .TIME_FORMAT_OPTIONS_ALIGNMENT_LEFT => return std.fmt.Alignment.Left,
+        .TIME_FORMAT_OPTIONS_ALIGNMENT_CENTER => return std.fmt.Alignment.Center,
+        .TIME_FORMAT_OPTIONS_ALIGNMENT_RIGHT => return std.fmt.Alignment.Right
+    }
+}
 
 fn TimeZoneTo_time_zone_t(timezone: time.TimeZone) time_zone_t {
     switch (timezone) {
@@ -439,7 +460,28 @@ export fn time_date_time_to_unix_milli(self: *const time_date_time_t) u64 {
     return date_time.toUnixMilli();
 }
 
-// TODO: fn format(self: Self, comptime fmt: string, options: std.fmt.FormatOptions, writer: anytype) !void
+export fn time_date_time_format(self: *const time_date_time_t, fmt: [*c]const u8, options: *const time_format_options_t) c_int {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    const fmt_options = std.fmt.FormatOptions {
+        .precision = options.*.precision,
+        .width = options.*.width,
+        .alignment = time_format_options_alignment_t_toAlignment(options.*.alignment),
+        .fill = options.*.fill,
+    };
+    date_time.format(std.mem.span(fmt), fmt_options, std.io.getStdOut().writer()) catch return 1;
+    return 0;
+}
 
 // TODO: fn formatAlloc(self: Self, alloc: std.mem.Allocator, comptime fmt: string) !string
 
