@@ -483,7 +483,22 @@ export fn time_date_time_format(self: *const time_date_time_t, fmt: [*c]const u8
     return 0;
 }
 
-// TODO: fn formatAlloc(self: Self, alloc: std.mem.Allocator, comptime fmt: string) !string
+export fn time_date_time_format_alloc(self: *const time_date_time_t, fmt: [*c]const u8) [*c]const u8 {
+    const date_time = time.DateTime {
+        .ms = self.*.ms,
+        .seconds = self.*.seconds,
+        .minutes = self.*.minutes,
+        .hours = self.*.hours,
+        .days = self.*.days,
+        .months = self.*.months,
+        .years = self.*.years,
+        .timezone = time_zone_t_toTimeZone(self.*.timezone),
+        .weekday = time_zone_t_toWeekDay(self.*.weekday),
+        .era = time_era_t_toEra(self.*.era)
+    };
+    var res = date_time.formatAlloc(std.heap.c_allocator, std.mem.span(fmt)) catch return null;
+    return res.ptr;
+}
 
 export fn time_is_leap_year(year: u16) c_int {
     var ret: c_int = 0;
