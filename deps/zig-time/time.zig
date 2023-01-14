@@ -218,20 +218,20 @@ pub const DateTime = struct {
     }
 
     /// fmt is based on https://momentjs.com/docs/#/displaying/format/
-    pub fn format(self: Self, comptime fmt: string, options: std.fmt.FormatOptions, writer: anytype) !void {
+    pub fn format(self: Self, fmt: string, options: std.fmt.FormatOptions, writer: anytype) !void {
         _ = options;
 
-        if (fmt.len == 0) @compileError("DateTime: format string can't be empty");
+        // if (fmt.len == 0) @compileError("DateTime: format string can't be empty");
 
         @setEvalBranchQuota(100000);
 
-        comptime var s = 0;
-        comptime var e = 0;
-        comptime var next: ?FormatSeq = null;
-        inline for (fmt) |c, i| {
+        var s: usize = 0;
+        var e: usize = 0;
+        var next: ?FormatSeq = null;
+        for (fmt) |c, i| {
             e = i + 1;
 
-            if (comptime std.meta.stringToEnum(FormatSeq, fmt[s..e])) |tag| {
+            if (std.meta.stringToEnum(FormatSeq, fmt[s..e])) |tag| {
                 next = tag;
                 if (i < fmt.len - 1) continue;
             }
