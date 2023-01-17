@@ -483,7 +483,7 @@ export fn time_date_time_format(self: *const time_date_time_t, fmt: [*c]const u8
     return 0;
 }
 
-export fn time_date_time_format_alloc(self: *const time_date_time_t, fmt: [*c]const u8) [*c]const u8 {
+export fn time_date_time_format_alloc(self: *const time_date_time_t, fmt: [*c]const u8) [*c]u8 {
     const date_time = time.DateTime {
         .ms = self.*.ms,
         .seconds = self.*.seconds,
@@ -497,7 +497,9 @@ export fn time_date_time_format_alloc(self: *const time_date_time_t, fmt: [*c]co
         .era = time_era_t_toEra(self.*.era)
     };
     var res = date_time.formatAlloc(std.heap.c_allocator, std.mem.span(fmt)) catch return null;
-    return res.ptr;
+    var ptr: [*]u8 = res.ptr;
+    ptr[res.len] = 0;
+    return ptr;
 }
 
 export fn time_is_leap_year(year: u16) c_int {
@@ -510,4 +512,115 @@ export fn time_is_leap_year(year: u16) c_int {
 
 export fn time_days_in_year(year: u16) u16 {
     return if (time_is_leap_year(year) == 1) 366 else 365;
+}
+
+fn harness(seed: u64, expects: []const [2][*c]const u8) void {
+    var i: usize = 0;
+    while (i < expects.len) : (i += 1) {
+        _ = Case(seed, expects[i][0], expects[i][1]);
+    }
+}
+
+fn Case(seed: u64, fmt: [*c]const u8, expected: [*c]const u8) void {
+    const instant = time_date_time_init_unix_ms(seed);
+    const actual = time_date_time_format_alloc(&instant, fmt);
+    defer std.c.free(actual);
+    std.testing.expectEqualStrings(std.mem.span(expected), std.mem.span(actual)) catch return;
+}
+
+test {
+    harness(0, &.{.{ "YYYY-MM-DD HH:mm:ss", "1970-01-01 00:00:00" }});
+    harness(1257894000000, &.{.{ "YYYY-MM-DD HH:mm:ss", "2009-11-10 23:00:00" }});
+    harness(1634858430000, &.{.{ "YYYY-MM-DD HH:mm:ss", "2021-10-21 23:20:30" }});
+    harness(1634858430023, &.{.{ "YYYY-MM-DD HH:mm:ss.SSS", "2021-10-21 23:20:30.023" }});
+    harness(1144509852789, &.{.{ "YYYY-MM-DD HH:mm:ss.SSS", "2006-04-08 15:24:12.789" }});
+
+    harness(1635033600000, &.{
+        .{ "H", "0" },  .{ "HH", "00" },
+        .{ "h", "12" }, .{ "hh", "12" },
+        .{ "k", "24" }, .{ "kk", "24" },
+    });
+
+    harness(1635037200000, &.{
+        .{ "H", "1" }, .{ "HH", "01" },
+        .{ "h", "1" }, .{ "hh", "01" },
+        .{ "k", "1" }, .{ "kk", "01" },
+    });
+
+    harness(1635076800000, &.{
+        .{ "H", "12" }, .{ "HH", "12" },
+        .{ "h", "12" }, .{ "hh", "12" },
+        .{ "k", "12" }, .{ "kk", "12" },
+    });
+    harness(1635080400000, &.{
+        .{ "H", "13" }, .{ "HH", "13" },
+        .{ "h", "1" },  .{ "hh", "01" },
+        .{ "k", "13" }, .{ "kk", "13" },
+    });
+
+    harness(1144509852789, &.{
+        .{ "M", "4" },
+        .{ "Mo", "4th" },
+        .{ "MM", "04" },
+        .{ "MMM", "Apr" },
+        .{ "MMMM", "April" },
+
+        .{ "Q", "2" },
+        .{ "Qo", "2nd" },
+
+        .{ "D", "8" },
+        .{ "Do", "8th" },
+        .{ "DD", "08" },
+
+        .{ "DDD", "98" },
+        .{ "DDDo", "98th" },
+        .{ "DDDD", "098" },
+
+        .{ "d", "6" },
+        .{ "do", "6th" },
+        .{ "dd", "Sa" },
+        .{ "ddd", "Sat" },
+        .{ "dddd", "Saturday" },
+        .{ "e", "6" },
+        .{ "E", "7" },
+
+        .{ "w", "14" },
+        .{ "wo", "14th" },
+        .{ "ww", "14" },
+
+        .{ "Y", "12006" },
+        .{ "YY", "06" },
+        .{ "YYY", "2006" },
+        .{ "YYYY", "2006" },
+
+        .{ "N", "AD" },
+        .{ "NN", "Anno Domini" },
+
+        .{ "A", "PM" },
+        .{ "a", "pm" },
+
+        .{ "H", "15" },
+        .{ "HH", "15" },
+        .{ "h", "3" },
+        .{ "hh", "03" },
+        .{ "k", "15" },
+        .{ "kk", "15" },
+
+        .{ "m", "24" },
+        .{ "mm", "24" },
+
+        .{ "s", "12" },
+        .{ "ss", "12" },
+
+        .{ "S", "7" },
+        .{ "SS", "78" },
+        .{ "SSS", "789" },
+
+        .{ "z", "UTC" },
+        .{ "Z", "+00:00" },
+        .{ "ZZ", "+0000" },
+
+        .{ "x", "1144509852789" },
+    });
+    
 }

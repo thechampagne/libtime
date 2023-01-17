@@ -25,6 +25,7 @@ pub fn build(b: *std.build.Builder) void {
     const main_tests = b.addTest("src/time.zig");
     main_tests.setBuildMode(mode);
     main_tests.addPackage(Pkgs.time);
+    main_tests.linkLibC();
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);
